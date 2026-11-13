@@ -1,4 +1,4 @@
-package br.com.marketflow.marketflow_mcp;
+package br.com.marketflow.mcp;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;

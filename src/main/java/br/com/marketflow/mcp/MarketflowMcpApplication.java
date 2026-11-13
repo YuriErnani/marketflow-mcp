@@ -1,4 +1,4 @@
-package br.com.marketflow.marketflow_mcp;
+package br.com.marketflow.mcp;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
