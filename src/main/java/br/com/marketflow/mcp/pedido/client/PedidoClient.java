@@ -37,4 +37,12 @@ public class PedidoClient {
                 .body(new ParameterizedTypeReference<PaginaResponseDTO<PedidoResumoResponseDTO>>() {});
     }
 
+    public PedidoResponseDTO cancelar(Long pedidoId) {
+        return restClient
+                .post()
+                .uri("/pedidos/{id}/cancelamento", pedidoId)
+                .retrieve()
+                .body(PedidoResponseDTO.class);
+    }
+
 }

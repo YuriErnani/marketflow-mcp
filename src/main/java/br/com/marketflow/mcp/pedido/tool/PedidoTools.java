@@ -3,6 +3,7 @@ package br.com.marketflow.mcp.pedido.tool;
 import br.com.marketflow.mcp.pedido.client.PedidoClient;
 import br.com.marketflow.mcp.pedido.dto.ListaPedidosResponseDTO;
 import br.com.marketflow.mcp.pedido.dto.PedidoResponseDTO;
+import br.com.marketflow.mcp.pedido.dto.PreparacaoAcaoResponseDTO;
 import br.com.marketflow.mcp.pedido.dto.StatusPedido;
 import br.com.marketflow.mcp.pedido.service.PedidoService;
 import lombok.RequiredArgsConstructor;
@@ -35,6 +36,27 @@ public class PedidoTools {
             @McpToolParam(description = "Status para filtrar. Sem status, lista todos.", required = false) StatusPedido status) {
 
         return pedidoService.listarPedidos(status);
+    }
+
+    @McpTool(
+            name = "preparar_cancelamento",
+            description = "Primeira etapa do cancelamento de um pedido do MarketFlow. NÃO cancela nada: verifica se o pedido pode ser cancelado, descreve os efeitos e devolve um código de confirmação válido por 5 minutos. Mostre os efeitos ao usuário e só chame confirmar_cancelamento se ele concordar.",
+            annotations = @McpTool.McpAnnotations(readOnlyHint = true)
+    )
+    public PreparacaoAcaoResponseDTO prepararCancelamento(@McpToolParam(description = "Id do pedido") Long pedidoId) {
+        return pedidoService.prepararCancelamento(pedidoId);
+    }
+
+    @McpTool(
+            name = "confirmar_cancelamento",
+            description = "Segunda etapa: cancela de fato um pedido do MarketFlow, usando o código devolvido por preparar_cancelamento para o mesmo pedido. Só use depois que o usuário concordar com os efeitos. Cada código vale uma única vez.",
+            annotations = @McpTool.McpAnnotations(readOnlyHint = false, destructiveHint = true, idempotentHint = false)
+    )
+    public PedidoResponseDTO confirmarCancelamento(
+            @McpToolParam(description = "Id do pedido") Long pedidoId,
+            @McpToolParam(description = "Código de confirmação devolvido por preparar_cancelamento") String codigoConfirmacao) {
+
+        return pedidoService.confirmarCancelamento(pedidoId, codigoConfirmacao);
     }
 
 }
