@@ -1,5 +1,6 @@
 package br.com.marketflow.mcp.pedido.tool;
 
+import br.com.marketflow.mcp.infra.auditoria.AuditoriaService;
 import br.com.marketflow.mcp.pedido.client.PedidoClient;
 import br.com.marketflow.mcp.pedido.dto.ListaPedidosResponseDTO;
 import br.com.marketflow.mcp.pedido.dto.PedidoResponseDTO;
@@ -17,6 +18,7 @@ public class PedidoTools {
 
     private final PedidoClient pedidoClient;
     private final PedidoService pedidoService;
+    private final AuditoriaService auditoriaService;
 
     @McpTool(
             name = "consultar_pedido",
@@ -44,7 +46,7 @@ public class PedidoTools {
             annotations = @McpTool.McpAnnotations(readOnlyHint = true)
     )
     public PreparacaoAcaoResponseDTO prepararCancelamento(@McpToolParam(description = "Id do pedido") Long pedidoId) {
-        return pedidoService.prepararCancelamento(pedidoId);
+        return auditoriaService.auditar("preparar_cancelamento", "pedidoId=" + pedidoId, () -> pedidoService.prepararCancelamento(pedidoId));
     }
 
     @McpTool(
@@ -56,7 +58,32 @@ public class PedidoTools {
             @McpToolParam(description = "Id do pedido") Long pedidoId,
             @McpToolParam(description = "Código de confirmação devolvido por preparar_cancelamento") String codigoConfirmacao) {
 
-        return pedidoService.confirmarCancelamento(pedidoId, codigoConfirmacao);
+        return auditoriaService.auditar("confirmar_cancelamento", "pedidoId=" + pedidoId, () -> pedidoService.confirmarCancelamento(pedidoId, codigoConfirmacao));
+    }
+
+    @McpTool(
+            name = "preparar_atualizacao_status",
+            description = "Primeira etapa da mudança de status de um pedido do MarketFlow. NÃO altera nada: verifica se a mudança é permitida (o status só avança um passo: PAGAMENTO_APROVADO → EM_PREPARACAO → ENVIADO → ENTREGUE), descreve os efeitos e devolve um código de confirmação válido por 5 minutos. Mostre os efeitos ao usuário e só chame confirmar_atualizacao_status se ele concordar.",
+            annotations = @McpTool.McpAnnotations(readOnlyHint = true)
+    )
+    public PreparacaoAcaoResponseDTO prepararAtualizacaoStatus(
+            @McpToolParam(description = "Id do pedido") Long pedidoId,
+            @McpToolParam(description = "Novo status do pedido") StatusPedido novoStatus) {
+
+        return auditoriaService.auditar("preparar_atualizacao_status", "pedidoId=" + pedidoId + " novoStatus=" + novoStatus, () -> pedidoService.prepararAtualizacaoStatus(pedidoId, novoStatus));
+    }
+
+    @McpTool(
+            name = "confirmar_atualizacao_status",
+            description = "Segunda etapa: altera de fato o status de um pedido do MarketFlow, usando o código devolvido por preparar_atualizacao_status para o mesmo pedido e o mesmo novo status. Só use depois que o usuário concordar com os efeitos. Cada código vale uma única vez.",
+            annotations = @McpTool.McpAnnotations(readOnlyHint = false, destructiveHint = true, idempotentHint = false)
+    )
+    public PedidoResponseDTO confirmarAtualizacaoStatus(
+            @McpToolParam(description = "Id do pedido") Long pedidoId,
+            @McpToolParam(description = "Novo status do pedido, o mesmo usado na preparação") StatusPedido novoStatus,
+            @McpToolParam(description = "Código de confirmação devolvido por preparar_atualizacao_status") String codigoConfirmacao) {
+
+        return auditoriaService.auditar("confirmar_atualizacao_status", "pedidoId=" + pedidoId + " novoStatus=" + novoStatus, () -> pedidoService.confirmarAtualizacaoStatus(pedidoId, novoStatus, codigoConfirmacao));
     }
 
 }

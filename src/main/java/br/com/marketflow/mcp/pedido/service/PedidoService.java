@@ -67,4 +67,39 @@ public class PedidoService {
         return pedidoClient.cancelar(pedidoId);
     }
 
+    public PreparacaoAcaoResponseDTO prepararAtualizacaoStatus(Long pedidoId, StatusPedido novoStatus) {
+        var pedido = pedidoClient.buscarPorId(pedidoId);
+
+        var proximoStatus = switch (pedido.status()) {
+            case PAGAMENTO_APROVADO -> StatusPedido.EM_PREPARACAO;
+            case EM_PREPARACAO -> StatusPedido.ENVIADO;
+            case ENVIADO -> StatusPedido.ENTREGUE;
+            default -> null;
+        };
+
+        if (proximoStatus == null)
+            throw new IllegalStateException("O status de pedidos " + pedido.status() + " não pode ser alterado por esta ferramenta.");
+
+        if (novoStatus != proximoStatus)
+            throw new IllegalStateException("O pedido está " + pedido.status() + ": o único próximo status possível é " + proximoStatus + ".");
+
+        var efeitos = List.of(
+                "O status do pedido passa de " + pedido.status() + " para " + novoStatus + ".",
+                "Não é possível voltar ao status anterior.",
+                "O estoque e o pagamento não são alterados.");
+
+        var codigo = confirmacaoService.registrar(TipoAcaoPedido.ATUALIZAR_STATUS, pedidoId, novoStatus);
+
+        return new PreparacaoAcaoResponseDTO(pedidoId, pedido.status(), pedido.total(), efeitos, codigo, ConfirmacaoService.VALIDADE.toMinutes());
+    }
+
+    public PedidoResponseDTO confirmarAtualizacaoStatus(Long pedidoId, StatusPedido novoStatus, String codigoConfirmacao) {
+        var pendente = confirmacaoService.consumir(codigoConfirmacao, TipoAcaoPedido.ATUALIZAR_STATUS, pedidoId);
+
+        if (pendente.novoStatus() != novoStatus)
+            throw new IllegalArgumentException("Este código foi gerado para o status " + pendente.novoStatus() + ", e não para " + novoStatus + ".");
+
+        return pedidoClient.atualizarStatus(pedidoId, novoStatus);
+    }
+
 }
