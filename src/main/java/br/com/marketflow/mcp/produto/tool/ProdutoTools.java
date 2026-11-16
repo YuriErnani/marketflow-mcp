@@ -1,37 +1,36 @@
 package br.com.marketflow.mcp.produto.tool;
 
+import br.com.marketflow.mcp.infra.dto.PaginaResponseDTO;
+import br.com.marketflow.mcp.produto.client.ProdutoClient;
 import br.com.marketflow.mcp.produto.dto.ProdutoResponseDTO;
+import lombok.RequiredArgsConstructor;
 import org.springframework.ai.mcp.annotation.McpTool;
 import org.springframework.ai.mcp.annotation.McpToolParam;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
-import java.util.List;
 
 @Component
+@RequiredArgsConstructor
 public class ProdutoTools {
 
-    private static final List<ProdutoResponseDTO> PRODUTOS_FICTICIOS = List.of(
-            new ProdutoResponseDTO(1L, "Teclado Mecânico", new BigDecimal("349.90"), true, "Periféricos"),
-            new ProdutoResponseDTO(2L, "Mouse Sem Fio", new BigDecimal("129.90"), true, "Periféricos"),
-            new ProdutoResponseDTO(3L, "Monitor 27 Polegadas", new BigDecimal("1499.00"), false, "Monitores")
-    );
+    private final ProdutoClient produtoClient;
 
     @McpTool(
             name = "buscar_produtos",
-            description = "Busca produtos do catálogo do MarketFlow pelo nome. Sem nome, lista todos.",
+            description = "Busca produtos no catálogo do MarketFlow, com filtros opcionais. O resultado é paginado (10 por página, começando na página 0) e informa o total de páginas: se houver mais, chame de novo com a próxima página.",
             annotations = @McpTool.McpAnnotations(readOnlyHint = true)
     )
-    public List<ProdutoResponseDTO> buscarProdutos(@McpToolParam(description = "Trecho do nome do produto, sem diferenciar maiúsculas e minúsculas", required = false) String nome) {
-        if (nome == null || nome.isBlank())
-            return PRODUTOS_FICTICIOS;
+    public PaginaResponseDTO<ProdutoResponseDTO> buscarProdutos(
+            @McpToolParam(description = "Trecho do nome do produto, sem diferenciar maiúsculas e minúsculas", required = false) String nome,
+            @McpToolParam(description = "Id da categoria", required = false) Long categoriaId,
+            @McpToolParam(description = "Preço mínimo, em reais", required = false) BigDecimal precoMin,
+            @McpToolParam(description = "Preço máximo, em reais", required = false) BigDecimal precoMax,
+            @McpToolParam(description = "Número da página, começando em 0", required = false) Integer pagina) {
 
-        var termo = nome.toLowerCase();
+        var numeroPagina = pagina == null ? 0 : pagina;
 
-        return PRODUTOS_FICTICIOS
-                .stream()
-                .filter(produto -> produto.nome().toLowerCase().contains(termo))
-                .toList();
+        return produtoClient.buscar(nome, categoriaId, precoMin, precoMax, numeroPagina);
     }
 
 }
