@@ -6,6 +6,7 @@ import br.com.marketflow.mcp.pedido.dto.TipoAcaoPedido;
 import org.springframework.stereotype.Service;
 
 import java.security.SecureRandom;
+import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Map;
@@ -18,9 +19,18 @@ public class ConfirmacaoService {
 
     private final SecureRandom random = new SecureRandom();
     private final Map<String, AcaoPendente> pendentes = new ConcurrentHashMap<>();
+    private final Clock relogio;
+
+    public ConfirmacaoService() {
+        this(Clock.systemUTC());
+    }
+
+    ConfirmacaoService(Clock relogio) {
+        this.relogio = relogio;
+    }
 
     public String registrar(TipoAcaoPedido acao, Long pedidoId, StatusPedido novoStatus) {
-        var agora = Instant.now();
+        var agora = Instant.now(relogio);
 
         pendentes.values().removeIf(pendente -> pendente.expiraEm().isBefore(agora));
 
@@ -40,7 +50,7 @@ public class ConfirmacaoService {
         if (pendente == null)
             throw new IllegalArgumentException("Código de confirmação inválido ou já utilizado. Prepare a ação novamente.");
 
-        if (pendente.expiraEm().isBefore(Instant.now()))
+        if (pendente.expiraEm().isBefore(Instant.now(relogio)))
             throw new IllegalArgumentException("Código de confirmação expirado. Prepare a ação novamente.");
 
         if (pendente.acao() != acao || !pendente.pedidoId().equals(pedidoId))
