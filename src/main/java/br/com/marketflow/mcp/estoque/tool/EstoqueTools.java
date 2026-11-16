@@ -2,7 +2,9 @@ package br.com.marketflow.mcp.estoque.tool;
 
 import br.com.marketflow.mcp.estoque.client.EstoqueClient;
 import br.com.marketflow.mcp.estoque.dto.EstoqueResponseDTO;
+import br.com.marketflow.mcp.estoque.dto.ListaEstoqueBaixoResponseDTO;
 import br.com.marketflow.mcp.estoque.dto.MovimentacaoEstoqueResponseDTO;
+import br.com.marketflow.mcp.estoque.service.EstoqueService;
 import br.com.marketflow.mcp.infra.dto.PaginaResponseDTO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.ai.mcp.annotation.McpTool;
@@ -14,6 +16,7 @@ import org.springframework.stereotype.Component;
 public class EstoqueTools {
 
     private final EstoqueClient estoqueClient;
+    private final EstoqueService estoqueService;
 
     @McpTool(
             name = "consultar_saldo_produto",
@@ -36,6 +39,19 @@ public class EstoqueTools {
         var numeroPagina = pagina == null ? 0 : pagina;
 
         return estoqueClient.listarMovimentacoes(produtoId, numeroPagina);
+    }
+
+    @McpTool(
+            name = "listar_estoque_baixo",
+            description = "Lista os produtos ativos do MarketFlow com saldo disponível menor que o limite informado, do menor saldo para o maior. Analisa no máximo 100 produtos, consultando o saldo de cada um: se listaIncompleta for true, existem produtos que não foram analisados.",
+            annotations = @McpTool.McpAnnotations(readOnlyHint = true)
+    )
+    public ListaEstoqueBaixoResponseDTO listarEstoqueBaixo(
+            @McpToolParam(description = "Limite de saldo disponível: entram os produtos com saldo menor que este número. Padrão: 5.", required = false) Integer limite) {
+
+        var limiteSaldo = limite == null ? 5 : limite;
+
+        return estoqueService.listarEstoqueBaixo(limiteSaldo);
     }
 
 }

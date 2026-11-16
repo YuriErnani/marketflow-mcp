@@ -31,4 +31,16 @@ public class ProdutoClient {
                 .body(new ParameterizedTypeReference<PaginaResponseDTO<ProdutoResponseDTO>>() {});
     }
 
+    public PaginaResponseDTO<ProdutoResponseDTO> listar(int pagina, int tamanho) {
+        return restClient
+                .get()
+                .uri(uriBuilder -> uriBuilder
+                        .path("/produtos")
+                        .queryParam("page", pagina)
+                        .queryParam("size", tamanho)
+                        .build())
+                .retrieve()
+                .body(new ParameterizedTypeReference<PaginaResponseDTO<ProdutoResponseDTO>>() {});
+    }
+
 }
