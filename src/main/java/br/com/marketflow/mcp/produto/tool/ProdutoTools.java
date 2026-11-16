@@ -1,6 +1,7 @@
 package br.com.marketflow.mcp.produto.tool;
 
 import br.com.marketflow.mcp.infra.dto.PaginaResponseDTO;
+import br.com.marketflow.mcp.infra.exception.TradutorErros;
 import br.com.marketflow.mcp.produto.client.ProdutoClient;
 import br.com.marketflow.mcp.produto.dto.ProdutoResponseDTO;
 import lombok.RequiredArgsConstructor;
@@ -15,6 +16,7 @@ import java.math.BigDecimal;
 public class ProdutoTools {
 
     private final ProdutoClient produtoClient;
+    private final TradutorErros tradutorErros;
 
     @McpTool(
             name = "buscar_produtos",
@@ -30,7 +32,7 @@ public class ProdutoTools {
 
         var numeroPagina = pagina == null ? 0 : pagina;
 
-        return produtoClient.buscar(nome, categoriaId, precoMin, precoMax, numeroPagina);
+        return tradutorErros.executar(() -> produtoClient.buscar(nome, categoriaId, precoMin, precoMax, numeroPagina));
     }
 
 }

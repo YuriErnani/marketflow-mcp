@@ -1,6 +1,7 @@
 package br.com.marketflow.mcp.pedido.tool;
 
 import br.com.marketflow.mcp.infra.auditoria.AuditoriaService;
+import br.com.marketflow.mcp.infra.exception.TradutorErros;
 import br.com.marketflow.mcp.pedido.client.PedidoClient;
 import br.com.marketflow.mcp.pedido.dto.ListaPedidosResponseDTO;
 import br.com.marketflow.mcp.pedido.dto.PedidoResponseDTO;
@@ -19,6 +20,7 @@ public class PedidoTools {
     private final PedidoClient pedidoClient;
     private final PedidoService pedidoService;
     private final AuditoriaService auditoriaService;
+    private final TradutorErros tradutorErros;
 
     @McpTool(
             name = "consultar_pedido",
@@ -26,7 +28,7 @@ public class PedidoTools {
             annotations = @McpTool.McpAnnotations(readOnlyHint = true)
     )
     public PedidoResponseDTO consultarPedido(@McpToolParam(description = "Id do pedido") Long pedidoId) {
-        return pedidoClient.buscarPorId(pedidoId);
+        return tradutorErros.executar(() -> pedidoClient.buscarPorId(pedidoId));
     }
 
     @McpTool(
@@ -37,7 +39,7 @@ public class PedidoTools {
     public ListaPedidosResponseDTO listarPedidos(
             @McpToolParam(description = "Status para filtrar. Sem status, lista todos.", required = false) StatusPedido status) {
 
-        return pedidoService.listarPedidos(status);
+        return tradutorErros.executar(() -> pedidoService.listarPedidos(status));
     }
 
     @McpTool(

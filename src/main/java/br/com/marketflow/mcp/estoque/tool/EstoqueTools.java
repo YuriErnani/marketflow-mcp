@@ -6,6 +6,7 @@ import br.com.marketflow.mcp.estoque.dto.ListaEstoqueBaixoResponseDTO;
 import br.com.marketflow.mcp.estoque.dto.MovimentacaoEstoqueResponseDTO;
 import br.com.marketflow.mcp.estoque.service.EstoqueService;
 import br.com.marketflow.mcp.infra.dto.PaginaResponseDTO;
+import br.com.marketflow.mcp.infra.exception.TradutorErros;
 import lombok.RequiredArgsConstructor;
 import org.springframework.ai.mcp.annotation.McpTool;
 import org.springframework.ai.mcp.annotation.McpToolParam;
@@ -17,6 +18,7 @@ public class EstoqueTools {
 
     private final EstoqueClient estoqueClient;
     private final EstoqueService estoqueService;
+    private final TradutorErros tradutorErros;
 
     @McpTool(
             name = "consultar_saldo_produto",
@@ -24,7 +26,7 @@ public class EstoqueTools {
             annotations = @McpTool.McpAnnotations(readOnlyHint = true)
     )
     public EstoqueResponseDTO consultarSaldoProduto(@McpToolParam(description = "Id do produto") Long produtoId) {
-        return estoqueClient.consultarSaldo(produtoId);
+        return tradutorErros.executar(() -> estoqueClient.consultarSaldo(produtoId));
     }
 
     @McpTool(
@@ -38,7 +40,7 @@ public class EstoqueTools {
 
         var numeroPagina = pagina == null ? 0 : pagina;
 
-        return estoqueClient.listarMovimentacoes(produtoId, numeroPagina);
+        return tradutorErros.executar(() -> estoqueClient.listarMovimentacoes(produtoId, numeroPagina));
     }
 
     @McpTool(
@@ -51,7 +53,7 @@ public class EstoqueTools {
 
         var limiteSaldo = limite == null ? 5 : limite;
 
-        return estoqueService.listarEstoqueBaixo(limiteSaldo);
+        return tradutorErros.executar(() -> estoqueService.listarEstoqueBaixo(limiteSaldo));
     }
 
 }
