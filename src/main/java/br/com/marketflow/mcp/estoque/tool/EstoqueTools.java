@@ -7,6 +7,7 @@ import br.com.marketflow.mcp.estoque.dto.MovimentacaoEstoqueResponseDTO;
 import br.com.marketflow.mcp.estoque.service.EstoqueService;
 import br.com.marketflow.mcp.infra.dto.PaginaResponseDTO;
 import br.com.marketflow.mcp.infra.exception.TradutorErros;
+import br.com.marketflow.mcp.infra.validacao.Validacao;
 import lombok.RequiredArgsConstructor;
 import org.springframework.ai.mcp.annotation.McpTool;
 import org.springframework.ai.mcp.annotation.McpToolParam;
@@ -26,7 +27,9 @@ public class EstoqueTools {
             annotations = @McpTool.McpAnnotations(readOnlyHint = true)
     )
     public EstoqueResponseDTO consultarSaldoProduto(@McpToolParam(description = "Id do produto") Long produtoId) {
-        return tradutorErros.executar(() -> estoqueClient.consultarSaldo(produtoId));
+        var id = Validacao.id(produtoId, "produtoId");
+
+        return tradutorErros.executar(() -> estoqueClient.consultarSaldo(id));
     }
 
     @McpTool(
@@ -38,9 +41,10 @@ public class EstoqueTools {
             @McpToolParam(description = "Id do produto") Long produtoId,
             @McpToolParam(description = "Número da página, começando em 0", required = false) Integer pagina) {
 
-        var numeroPagina = pagina == null ? 0 : pagina;
+        var id = Validacao.id(produtoId, "produtoId");
+        var numeroPagina = Validacao.pagina(pagina);
 
-        return tradutorErros.executar(() -> estoqueClient.listarMovimentacoes(produtoId, numeroPagina));
+        return tradutorErros.executar(() -> estoqueClient.listarMovimentacoes(id, numeroPagina));
     }
 
     @McpTool(
@@ -49,9 +53,9 @@ public class EstoqueTools {
             annotations = @McpTool.McpAnnotations(readOnlyHint = true)
     )
     public ListaEstoqueBaixoResponseDTO listarEstoqueBaixo(
-            @McpToolParam(description = "Limite de saldo disponível: entram os produtos com saldo menor que este número. Padrão: 5.", required = false) Integer limite) {
+            @McpToolParam(description = "Limite de saldo disponível, entre 1 e 1000: entram os produtos com saldo menor que este número. Padrão: 5.", required = false) Integer limite) {
 
-        var limiteSaldo = limite == null ? 5 : limite;
+        var limiteSaldo = Validacao.entre(limite, 5, 1, 1000, "limite");
 
         return tradutorErros.executar(() -> estoqueService.listarEstoqueBaixo(limiteSaldo));
     }

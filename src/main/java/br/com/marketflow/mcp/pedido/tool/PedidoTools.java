@@ -2,6 +2,7 @@ package br.com.marketflow.mcp.pedido.tool;
 
 import br.com.marketflow.mcp.infra.auditoria.AuditoriaService;
 import br.com.marketflow.mcp.infra.exception.TradutorErros;
+import br.com.marketflow.mcp.infra.validacao.Validacao;
 import br.com.marketflow.mcp.pedido.client.PedidoClient;
 import br.com.marketflow.mcp.pedido.dto.ListaPedidosResponseDTO;
 import br.com.marketflow.mcp.pedido.dto.PedidoResponseDTO;
@@ -28,7 +29,9 @@ public class PedidoTools {
             annotations = @McpTool.McpAnnotations(readOnlyHint = true)
     )
     public PedidoResponseDTO consultarPedido(@McpToolParam(description = "Id do pedido") Long pedidoId) {
-        return tradutorErros.executar(() -> pedidoClient.buscarPorId(pedidoId));
+        var id = Validacao.id(pedidoId, "pedidoId");
+
+        return tradutorErros.executar(() -> pedidoClient.buscarPorId(id));
     }
 
     @McpTool(
@@ -48,7 +51,8 @@ public class PedidoTools {
             annotations = @McpTool.McpAnnotations(readOnlyHint = true)
     )
     public PreparacaoAcaoResponseDTO prepararCancelamento(@McpToolParam(description = "Id do pedido") Long pedidoId) {
-        return auditoriaService.auditar("preparar_cancelamento", "pedidoId=" + pedidoId, () -> pedidoService.prepararCancelamento(pedidoId));
+        return auditoriaService.auditar("preparar_cancelamento", "pedidoId=" + pedidoId,
+                () -> pedidoService.prepararCancelamento(Validacao.id(pedidoId, "pedidoId")));
     }
 
     @McpTool(
@@ -58,9 +62,12 @@ public class PedidoTools {
     )
     public PedidoResponseDTO confirmarCancelamento(
             @McpToolParam(description = "Id do pedido") Long pedidoId,
-            @McpToolParam(description = "Código de confirmação devolvido por preparar_cancelamento") String codigoConfirmacao) {
+            @McpToolParam(description = "Código de confirmação de 6 dígitos devolvido por preparar_cancelamento") String codigoConfirmacao) {
 
-        return auditoriaService.auditar("confirmar_cancelamento", "pedidoId=" + pedidoId, () -> pedidoService.confirmarCancelamento(pedidoId, codigoConfirmacao));
+        return auditoriaService.auditar("confirmar_cancelamento", "pedidoId=" + pedidoId,
+                () -> pedidoService.confirmarCancelamento(
+                        Validacao.id(pedidoId, "pedidoId"),
+                        Validacao.codigoConfirmacao(codigoConfirmacao)));
     }
 
     @McpTool(
@@ -72,7 +79,10 @@ public class PedidoTools {
             @McpToolParam(description = "Id do pedido") Long pedidoId,
             @McpToolParam(description = "Novo status do pedido") StatusPedido novoStatus) {
 
-        return auditoriaService.auditar("preparar_atualizacao_status", "pedidoId=" + pedidoId + " novoStatus=" + novoStatus, () -> pedidoService.prepararAtualizacaoStatus(pedidoId, novoStatus));
+        return auditoriaService.auditar("preparar_atualizacao_status", "pedidoId=" + pedidoId + " novoStatus=" + novoStatus,
+                () -> pedidoService.prepararAtualizacaoStatus(
+                        Validacao.id(pedidoId, "pedidoId"),
+                        Validacao.obrigatorio(novoStatus, "novoStatus")));
     }
 
     @McpTool(
@@ -83,9 +93,13 @@ public class PedidoTools {
     public PedidoResponseDTO confirmarAtualizacaoStatus(
             @McpToolParam(description = "Id do pedido") Long pedidoId,
             @McpToolParam(description = "Novo status do pedido, o mesmo usado na preparação") StatusPedido novoStatus,
-            @McpToolParam(description = "Código de confirmação devolvido por preparar_atualizacao_status") String codigoConfirmacao) {
+            @McpToolParam(description = "Código de confirmação de 6 dígitos devolvido por preparar_atualizacao_status") String codigoConfirmacao) {
 
-        return auditoriaService.auditar("confirmar_atualizacao_status", "pedidoId=" + pedidoId + " novoStatus=" + novoStatus, () -> pedidoService.confirmarAtualizacaoStatus(pedidoId, novoStatus, codigoConfirmacao));
+        return auditoriaService.auditar("confirmar_atualizacao_status", "pedidoId=" + pedidoId + " novoStatus=" + novoStatus,
+                () -> pedidoService.confirmarAtualizacaoStatus(
+                        Validacao.id(pedidoId, "pedidoId"),
+                        Validacao.obrigatorio(novoStatus, "novoStatus"),
+                        Validacao.codigoConfirmacao(codigoConfirmacao)));
     }
 
 }
