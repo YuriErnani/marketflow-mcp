@@ -46,13 +46,10 @@ The server **does not call any AI model** and needs no AI API key. The reasoning
 
 ## How it works
 
-```mermaid
-flowchart LR
-    A[Claude Desktop] -- stdio --> M[MarketFlow MCP]
-    B[Claude web, desktop, mobile<br/>custom connector] -- "Streamable HTTP<br/>x-api-key" --> M
-    M -- "REST + JWT<br/>(service account)" --> API[MarketFlow API]
-    API --> DB[(PostgreSQL)]
-```
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/images/architecture-dark.svg">
+  <img alt="Claude Desktop over stdio and a Claude connector over HTTP with an API key reach the Spring Boot application, where transport, tools, services and clients call the MarketFlow API with a service account; an API key filter, audit log and confirmation codes support the flow" src="docs/images/architecture-light.svg">
+</picture>
 
 The same application runs in two modes, selected by a Spring profile:
 
@@ -97,16 +94,10 @@ Giving an AI model "hands" on a real system is the core concern of this project.
 
 **Two-step confirmation for every write.**
 
-```text
-preparar_cancelamento(1042)
-  → reads the real order state
-  → describes the effects ("stock is released", "the payment is refunded")
-  → returns a 6-digit confirmation code
-
-confirmar_cancelamento(1042, "381042")
-  → checks and burns the code
-  → only then calls the MarketFlow API
-```
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/images/two-step-confirmation-dark.svg">
+  <img alt="The user asks to cancel an order; preparar_cancelamento changes nothing and returns the effects and a 6-digit code valid for 5 minutes; after the user agrees, confirmar_cancelamento with the same code cancels the order, while a wrong, expired, reused or mismatched code is refused" src="docs/images/two-step-confirmation-light.svg">
+</picture>
 
 | Rule | Protects against |
 | :--- | :--- |
@@ -282,6 +273,7 @@ The server was also tested end to end with the MCP Inspector (stdio and HTTP), C
 ## Project structure
 
 ```text
+docs/images/         # README diagrams
 src/main/java/br/com/marketflow/mcp
 ├── estoque          # stock tools, low-stock aggregation
 ├── pedido           # order tools, status filter, two-step confirmation
